@@ -22,7 +22,6 @@ class ofApp : public ofBaseApp, public ofxMidiListener {
 		int curNote;
 		int prNote;
 		int pitchBend;
-		int prPitchBend;
 		unsigned int thr;
 		bool noteOn;
 		void keyPressed(int key);

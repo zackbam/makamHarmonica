@@ -43,25 +43,19 @@ void ofApp::setup(){
 	//printf("Set threshold for triggering notes (0-126, enter for default = 5: ");
 	//cin >> thr;
 	pitchBend = 8192;
-	prPitchBend = 8192;
 }
 
 void ofApp::mouseMoved(int x, int y) {
-	
-	prPitchBend = pitchBend;
 	pitchBend = (float)(ofGetHeight() - y) / (float)ofGetHeight() * 16383;
-	if (pitchBend != prPitchBend)
-		midiOut.sendPitchBend(1, pitchBend);
-	if (breath > thr) {
-		prNote = curNote;
-		curNote = x / noteWidth;
-		if (curNote != prNote) {
-			if (prNote != -1)
-				midiOut.sendNoteOff(1, scale[prNote], 0);
-			if (curNote != -1) {
-				midiOut.sendNoteOn(1, scale[curNote], breath);
-				noteOn = true;
-			}
+	midiOut.sendPitchBend(1, pitchBend);
+	prNote = curNote;
+	curNote = x / noteWidth;
+	if (curNote != prNote) {
+		if (prNote != -1)
+			midiOut.sendNoteOff(1, scale[prNote], 0);
+		if (curNote != -1 && breath > thr) {
+			midiOut.sendNoteOn(1, scale[curNote], breath);
+			noteOn = true;
 		}
 	}
 }
@@ -102,6 +96,7 @@ void ofApp::newMidiMessage(ofxMidiMessage& msg) {
 		midiOut.sendControlChange(1, 7, breath);
 		if (!noteOn) {
 			midiOut.sendNoteOn(1, scale[curNote], breath);
+			noteOn = true;
 		}
 	}
 }
