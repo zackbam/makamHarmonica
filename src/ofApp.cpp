@@ -21,6 +21,7 @@ void ofApp::setup(){
 	scale[13] = 72;//c
 	scale[14] = 73;//db
 	midiOut.listPorts();
+	breath = 100;
 	printf("Select midi OUT device (number 0 to %d): ",midiOut.getNumPorts()-1);
 	int port;
 	cin >> port;
@@ -43,6 +44,7 @@ void ofApp::setup(){
 	//printf("Set threshold for triggering notes (0-126, enter for default = 5: ");
 	//cin >> thr;
 	pitchBend = 8192;
+	//ofSetFrameRate(120);
 }
 
 void ofApp::mouseMoved(int x, int y) {
@@ -86,17 +88,20 @@ void ofApp::draw(){
 
 void ofApp::newMidiMessage(ofxMidiMessage& msg) {
 	// make a copy of the latest message
-	midiMessage = msg;
-	breath = msg.value;
-	if (breath < thr) {
-		midiOut.sendNoteOff(1, scale[curNote], 0);
-		noteOn = false;
-	}
-	else {
-		midiOut.sendControlChange(1, 7, breath);
-		if (!noteOn) {
-			midiOut.sendNoteOn(1, scale[curNote], breath);
-			noteOn = true;
+	
+	if (msg.status == MIDI_CONTROL_CHANGE) {
+		midiMessage = msg;
+		breath = msg.value;
+		if (breath < thr) {
+			midiOut.sendNoteOff(1, scale[curNote], 0);
+			noteOn = false;
+		}
+		else {
+			midiOut.sendControlChange(1, 7, breath);
+			if (!noteOn) {
+				midiOut.sendNoteOn(1, scale[curNote], breath);
+				noteOn = true;
+			}
 		}
 	}
 }
