@@ -3,12 +3,20 @@
 #include "ofMain.h"
 #include "ofxMidi.h"
 
+typedef struct {
+	char name[20];
+	unsigned int intervals[7];
+	unsigned int starts;
+}makam;
+
 class ofApp : public ofBaseApp, public ofxMidiListener {
 	public:
 		void setup();
 		void update();
 		void draw();
 		void newMidiMessage(ofxMidiMessage& msg);
+		void setMakam(unsigned short int k);
+
 		ofxMidiOut midiOut;
 		ofxMidiIn midiIn;
 		ofxMidiMessage midiMessage;
@@ -24,6 +32,8 @@ class ofApp : public ofBaseApp, public ofxMidiListener {
 		int pitchBend;
 		unsigned int thr;
 		bool noteOn;
+		vector<makam> makams;
+
 		void keyPressed(int key);
 		void keyReleased(int key);
 		void mouseMoved(int x, int y);

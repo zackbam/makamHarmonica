@@ -59,7 +59,7 @@ void ofApp::setup(){
 	midiIn.setVerbose(true);
 	pitchBend = 8192;
 	fclose(initParam);
-	//ofSetFrameRate(120);
+	ofSetFrameRate(30);
 }
 
 void ofApp::mouseMoved(int x, int y) {
