@@ -80,7 +80,11 @@ void ofApp::mouseMoved(int x, int y) {
 void ofApp::newMidiMessage(ofxMidiMessage& msg) {
 	// make a copy of the latest message
 	midiMessage = msg;
-	if (msg.status == MIDI_CONTROL_CHANGE) {
+	if (msg.status == MIDI_NOTE_OFF || (msg.velocity == 0 && msg.status == MIDI_NOTE_ON)) {
+		midiOut.sendNoteOff(1, scale[curNote], 0);
+		noteOn = false;
+	}
+	if (msg.status == MIDI_CONTROL_CHANGE || msg.status == MIDI_AFTERTOUCH || msg.status == MIDI_POLY_AFTERTOUCH) {
 		breath = msg.value;
 		if (breath < thr) {
 			midiOut.sendNoteOff(1, scale[curNote], 0);
