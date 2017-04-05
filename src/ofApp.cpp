@@ -1,6 +1,10 @@
 #include "ofApp.h"
 //--------------------------------------------------------------
 void ofApp::setup(){
+
+	FILE *initParam;
+	initParam = fopen("settings.txt", "r");
+	char paramName[30];
 	notesNumber = 15;
 	noteWidth = ofGetWidth() / notesNumber;
 	curNote = -1;
@@ -20,6 +24,19 @@ void ofApp::setup(){
 	scale[12] = 70;//bb
 	scale[13] = 72;//c
 	scale[14] = 73;//db
+	int temp;
+	thr = 60;
+	if (initParam == NULL)
+		cout << "No settings.txt file found\n";
+	else {
+		while (fscanf(initParam, "%s %d", paramName, &temp) != EOF) {
+			//printf("%s, %d\n", paramName, temp);
+			if (strcmp(paramName, "threshold") == 0)
+				thr = temp;
+
+		}
+	}
+
 	midiOut.listPorts();
 	breath = 100;
 	printf("Select midi OUT device (number 0 to %d): ",midiOut.getNumPorts()-1);
@@ -40,10 +57,8 @@ void ofApp::setup(){
 	printf("midi In connected\n");
 	midiIn.addListener(this);
 	midiIn.setVerbose(true);
-	thr = 5;
-	//printf("Set threshold for triggering notes (0-126, enter for default = 5: ");
-	//cin >> thr;
 	pitchBend = 8192;
+	fclose(initParam);
 	//ofSetFrameRate(120);
 }
 
