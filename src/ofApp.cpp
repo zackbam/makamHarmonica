@@ -98,6 +98,7 @@ void ofApp::newMidiMessage(ofxMidiMessage& msg) {
 	else if (msg.status == MIDI_NOTE_OFF || msg.velocity < thr) {
 		midiOut.sendNoteOff(1, scale[curNote], 0);
 		noteOn = false;
+		breath = 0;
 	}
 }
 
