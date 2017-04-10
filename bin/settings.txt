@@ -1,1 +1,3 @@
-threshold 60
+threshold 50
+sensitivity 3
+framerate 80

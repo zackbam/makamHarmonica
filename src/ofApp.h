@@ -15,7 +15,6 @@ class ofApp : public ofBaseApp, public ofxMidiListener {
 		void update();
 		void draw();
 		void newMidiMessage(ofxMidiMessage& msg);
-		void setMakam(unsigned short int k);
 
 		ofxMidiOut midiOut;
 		ofxMidiIn midiIn;
@@ -30,7 +29,7 @@ class ofApp : public ofBaseApp, public ofxMidiListener {
 		int curNote;
 		int prNote;
 		int pitchBend;
-		unsigned int thr;
+		unsigned int thr,sensitivity;
 		bool noteOn;
 		vector<makam> makams;
 

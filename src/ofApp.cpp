@@ -26,6 +26,8 @@ void ofApp::setup(){
 	scale[14] = 73;//db
 	int temp;
 	thr = 60;
+	sensitivity = 1;
+	ofSetFrameRate(30);
 	if (initParam == NULL)
 		cout << "No settings.txt file found\n";
 	else {
@@ -33,6 +35,10 @@ void ofApp::setup(){
 			//printf("%s, %d\n", paramName, temp);
 			if (strcmp(paramName, "threshold") == 0)
 				thr = temp;
+			if (strcmp(paramName, "sensitivity") == 0)
+				sensitivity = temp;
+			if (strcmp(paramName, "framerate") == 0)
+				ofSetFrameRate(temp);
 
 		}
 	}
@@ -59,7 +65,6 @@ void ofApp::setup(){
 	midiIn.setVerbose(true);
 	pitchBend = 8192;
 	fclose(initParam);
-	ofSetFrameRate(30);
 }
 
 void ofApp::mouseMoved(int x, int y) {
@@ -82,7 +87,9 @@ void ofApp::newMidiMessage(ofxMidiMessage& msg) {
 	midiMessage = msg;
 	
 	if (msg.status == MIDI_CONTROL_CHANGE || msg.status == MIDI_AFTERTOUCH || msg.status == MIDI_POLY_AFTERTOUCH) {
-		breath = msg.value;
+		breath = msg.value * sensitivity;
+		if (breath > 127)
+			breath = 127;
 		if (breath < thr) {
 			midiOut.sendNoteOff(1, scale[curNote], 0);
 			noteOn = false;
@@ -143,7 +150,7 @@ void ofApp::draw(){
 		ofDrawRectangle(20, 202, ofMap(midiMessage.value, 0, MIDI_MAX_BEND, 0, ofGetWidth() - 40), 20);
 	}
 	else {
-		ofDrawRectangle(20, 202, ofMap(midiMessage.value, 0, 127, 0, ofGetWidth() - 40), 20);
+		ofDrawRectangle(20, 300, ofMap(breath, 0, 127, 0, ofGetWidth() - 40), 20);
 	}
 
 	text << "delta: " << midiMessage.deltatime;
