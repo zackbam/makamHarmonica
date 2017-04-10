@@ -1,33 +1,28 @@
 #include "ofApp.h"
 //--------------------------------------------------------------
 void ofApp::setup(){
-
-	FILE *initParam;
-	initParam = fopen("settings.txt", "r");
-	char paramName[30];
-	notesNumber = 15;
-	noteWidth = ofGetWidth() / notesNumber;
-	curNote = -1;
-	prNote = -1;
-	scale[0] = 50;//d
-	scale[1] = 52;//e
-	scale[2] = 53;//f
-	scale[3] = 54;//gb
-	scale[4] = 57;//a
-	scale[5] = 58;//bb
-	scale[6] = 60;//c
-	scale[7] = 61;//db
-	scale[8] = 64;//e
-	scale[9] = 65;//f
-	scale[10] = 66;//gb
-	scale[11] = 69;//a
-	scale[12] = 70;//bb
-	scale[13] = 72;//c
-	scale[14] = 73;//db
 	int temp;
 	thr = 60;
 	sensitivity = 1;
-	ofSetFrameRate(30);
+	notesNumber = 15;
+	noteWidth = (float)ofGetWidth() / (float)notesNumber;
+	curNote = -1;
+	prNote = -1;
+	tempPitch = 8192;
+	FILE *initParam,*loadMakams;
+	loadMakams = fopen("makams.txt", "r");
+	if (loadMakams == NULL)
+		cout << "No makams.txt file found\n";
+	else {
+		makam tempMakam;
+		while (fscanf(loadMakams, "%s %d %d %d %d %d %d %d %d", tempMakam.name, &tempMakam.starts, &tempMakam.intervals[0], &tempMakam.intervals[1], &tempMakam.intervals[2], &tempMakam.intervals[3], &tempMakam.intervals[4], &tempMakam.intervals[5], &tempMakam.intervals[6]) != EOF) {
+			makams.push_back(tempMakam);
+		}
+	}
+	initParam = fopen("settings.txt", "r");
+	char paramName[30];
+	
+	
 	if (initParam == NULL)
 		cout << "No settings.txt file found\n";
 	else {
@@ -39,10 +34,13 @@ void ofApp::setup(){
 				sensitivity = temp;
 			if (strcmp(paramName, "framerate") == 0)
 				ofSetFrameRate(temp);
+			if (strcmp(paramName, "notesNum") == 0)
+				notesNumber = temp;
 
 		}
 	}
 
+	setMakam(0);
 	midiOut.listPorts();
 	breath = 100;
 	printf("Select midi OUT device (number 0 to %d): ",midiOut.getNumPorts()-1);
@@ -54,12 +52,14 @@ void ofApp::setup(){
 		printf("Wrong number given!\n");
 	printf("midi Out connected\n");
 	midiIn.listPorts();
-	printf("Select midi IN (breath sensor) device (number 0 to %d): ", midiIn.getNumPorts() - 1);
+	printf("Select midi IN (breath sensor) device (number 0 to %d). \nPress 9 for no breath sensor: ", midiIn.getNumPorts() - 1);
 	cin >> port;
 	if (port >= 0 && port < midiIn.getNumPorts())
 		midiIn.openPort(port);
-	else
-		printf("Wrong number given!\n");
+	else {
+		printf("Breath Sensor OFF\n");
+		breath = 100;
+	}
 	printf("midi In connected\n");
 	midiIn.addListener(this);
 	midiIn.setVerbose(true);
@@ -68,14 +68,21 @@ void ofApp::setup(){
 }
 
 void ofApp::mouseMoved(int x, int y) {
-	pitchBend = (float)(ofGetHeight() - y) / (float)ofGetHeight() * 16383;
-	midiOut.sendPitchBend(1, pitchBend);
 	prNote = curNote;
 	curNote = x / noteWidth;
+	pitchBend = (float)(ofGetHeight() - y) / (float)ofGetHeight() * 16383 - 8192; //how much pitch bend additional to the pitch bend of the note
+	tempPitch = pitchBend + pitchBends[curNote];
+	if (tempPitch < 0)
+		tempPitch = 0;
+	else if (tempPitch > 16383)
+		tempPitch = 16383;
+	midiOut.sendPitchBend(1, tempPitch);
 	if (curNote != prNote) {
 		if (prNote != -1)
 			midiOut.sendNoteOff(1, scale[prNote], 0);
 		if (curNote != -1 && breath > thr) {
+			printf("%d %d %d\n", curNote,scale[curNote], pitchBends[curNote]);
+			midiOut.sendPitchBend(1, tempPitch);
 			midiOut.sendNoteOn(1, scale[curNote], breath);
 			noteOn = true;
 		}
@@ -97,6 +104,8 @@ void ofApp::newMidiMessage(ofxMidiMessage& msg) {
 		else {
 			midiOut.sendControlChange(1, 7, breath);
 			if (!noteOn) {
+				printf("%d %d %d\n", curNote, scale[curNote], pitchBends[curNote]);
+				midiOut.sendPitchBend(1, tempPitch);
 				midiOut.sendNoteOn(1, scale[curNote], breath);
 				noteOn = true;
 			}
@@ -158,7 +167,13 @@ void ofApp::draw(){
 	text.str(""); // clear
 	ofSetColor(255);
 	for (int i = 0; i < notesNumber; i++) {
-		ofLine(ofPoint(i*noteWidth, 0), ofPoint(i*noteWidth, ofGetHeight()));
+		if (i%7 == 3) {
+			ofSetColor(255, 0, 0);
+			ofLine(ofPoint(i*noteWidth, 0), ofPoint(i*noteWidth, ofGetHeight()));
+			ofSetColor(255);
+		}
+		else
+			ofLine(ofPoint(i*noteWidth, 0), ofPoint(i*noteWidth, ofGetHeight()));
 	}
 }
 
@@ -168,7 +183,33 @@ void ofApp::exit() {
 	midiIn.closePort();
 	midiIn.removeListener(this);
 }
-
+void ofApp::setMakam(unsigned short int k) {
+	cout << "Loaded " << makams.size() << " makams:" << endl;
+	for (int i = 0; i < makams.size(); i++) {
+		printf("%d: %s %d %d %d %d %d %d %d %d\n", i,makams[i].name, makams[i].starts, makams[i].intervals[0], makams[i].intervals[1], makams[i].intervals[2], makams[i].intervals[3], makams[i].intervals[4], makams[i].intervals[5], makams[i].intervals[6]);
+	}
+	printf("Select Makam (number + enter): ");
+	cin >> k;
+	cout << "loading " << makams[k].name << endl;
+	int scaleComas = (int)makams[k].starts;
+	float interval = 48 + (float)(scaleComas) / 53.0*12.0;
+	scale[3] = round(interval);
+	pitchBends[3] = 8192 + (interval - scale[3]) * 8192;
+	for (int i = 4; i < notesNumber; i++) {
+		interval = 48 + (float)(makams[k].intervals[(i-4) % 7] + scaleComas) / 53.0*12.0;
+		scale[i] = round(interval);
+		pitchBends[i] = 8192 + (interval - scale[i]) * 8192; //the pitch bend sould be set to 8192->1 semitone.
+		scaleComas += makams[k].intervals[(i - 4) % 7];
+		
+	}
+	for (int i = 0; i < 3; i++) {
+		scale[i] = scale[i+7]-12;
+		pitchBends[i] = pitchBends[i+7]; //the pitch bend sould be set to 8192->1 semitone.
+	}
+	for (int i = 0; i < notesNumber; i++) {
+		printf("scale[%d] = %d, pitchBend = %d\n", i, scale[i], pitchBends[i]);
+	}
+}
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
 
@@ -207,7 +248,8 @@ void ofApp::mouseExited(int x, int y){
 
 //--------------------------------------------------------------
 void ofApp::windowResized(int w, int h){
-	noteWidth = ofGetWidth() / notesNumber;
+	ofSetLineWidth(w*0.01);
+	noteWidth = (float)w / (float)notesNumber;
 }
 
 //--------------------------------------------------------------

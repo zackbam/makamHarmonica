@@ -6,6 +6,7 @@ Ussak 40 7 6 9 9 4 9 9
 Huseyni 40 7 6 9 9 6 7 9
 Neva 40 7 6 9 9 8 5 9
 Hicaz 40 5 12 5 9 8 5 9
+Hicazar 40 5 12 5 9 5 12 5 
 Saba 40 7 6 7 11 4 9 9
 Humayun 40 5 12 5 9 4 9 9
 Uzzal 40 5 12 5 9 6 7 9

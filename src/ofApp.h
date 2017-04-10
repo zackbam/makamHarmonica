@@ -15,6 +15,7 @@ class ofApp : public ofBaseApp, public ofxMidiListener {
 		void update();
 		void draw();
 		void newMidiMessage(ofxMidiMessage& msg);
+		void setMakam(unsigned short int k);
 
 		ofxMidiOut midiOut;
 		ofxMidiIn midiIn;
@@ -23,9 +24,10 @@ class ofApp : public ofBaseApp, public ofxMidiListener {
 		stringstream text;
 		unsigned int breath;
 		int notesNumber;
-		int scale[15];
-		int pitchBends[15];
-		int noteWidth;
+		int scale[200];
+		int pitchBends[200];
+		int tempPitch;
+		float noteWidth;
 		int curNote;
 		int prNote;
 		int pitchBend;
