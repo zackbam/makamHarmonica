@@ -127,7 +127,6 @@ void ofApp::update(){
 void ofApp::draw(){
 
 	ofSetColor(0);
-
 	// draw the last recieved message contents to the screen
 	text << "Received: " << ofxMidiMessage::getStatusString(midiMessage.status);
 	ofDrawBitmapString(text.str(), 20, 20);
@@ -166,6 +165,7 @@ void ofApp::draw(){
 	ofDrawBitmapString(text.str(), 20, 240);
 	text.str(""); // clear
 	ofSetColor(255);
+	ofSetLineWidth(ofGetWidth()*0.01);
 	for (int i = 0; i < notesNumber; i++) {
 		if (i%7 == 3) {
 			ofSetColor(255, 0, 0);
@@ -175,6 +175,8 @@ void ofApp::draw(){
 		else
 			ofLine(ofPoint(i*noteWidth, 0), ofPoint(i*noteWidth, ofGetHeight()));
 	}
+	ofSetLineWidth(ofGetHeight()*0.01);
+	ofLine(ofPoint(0, ofGetHeight() / 2), ofPoint(ofGetWidth(), ofGetHeight() / 2));
 }
 
 
@@ -248,7 +250,6 @@ void ofApp::mouseExited(int x, int y){
 
 //--------------------------------------------------------------
 void ofApp::windowResized(int w, int h){
-	ofSetLineWidth(w*0.01);
 	noteWidth = (float)w / (float)notesNumber;
 }
 
