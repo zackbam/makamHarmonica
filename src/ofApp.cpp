@@ -22,7 +22,7 @@ void ofApp::setup(){
 	initParam = fopen("settings.txt", "r");
 	char paramName[30];
 	
-	
+	cargahTonalityMidi = 48;
 	if (initParam == NULL)
 		cout << "No settings.txt file found\n";
 	else {
@@ -30,17 +30,25 @@ void ofApp::setup(){
 			//printf("%s, %d\n", paramName, temp);
 			if (strcmp(paramName, "threshold") == 0)
 				thr = temp;
-			if (strcmp(paramName, "sensitivity") == 0)
+			else if (strcmp(paramName, "sensitivity") == 0)
 				sensitivity = temp;
-			if (strcmp(paramName, "framerate") == 0)
+			else if (strcmp(paramName, "framerate") == 0)
 				ofSetFrameRate(temp);
-			if (strcmp(paramName, "notesNum") == 0)
+			else if (strcmp(paramName, "notesNum") == 0)
 				notesNumber = temp;
+			else if (strcmp(paramName, "cargahTonalityMidi") == 0)
+				cargahTonalityMidi = temp;
 
 		}
 	}
-
-	setMakam(0);
+	cout << "Loaded " << makams.size() << " makams:" << endl;
+	for (int i = 0; i < makams.size(); i++) {
+		printf("%d: %s %d %d %d %d %d %d %d %d\n", i, makams[i].name, makams[i].starts, makams[i].intervals[0], makams[i].intervals[1], makams[i].intervals[2], makams[i].intervals[3], makams[i].intervals[4], makams[i].intervals[5], makams[i].intervals[6]);
+	}
+	printf("Select Makam (number + enter): ");
+	cin >> selectedMakam;
+	cout << "loading " << makams[selectedMakam].name << endl;
+	setMakam(selectedMakam);
 	midiOut.listPorts();
 	breath = 100;
 	printf("Select midi OUT device (number 0 to %d): ",midiOut.getNumPorts()-1);
@@ -81,7 +89,7 @@ void ofApp::mouseMoved(int x, int y) {
 		if (prNote != -1)
 			midiOut.sendNoteOff(1, scale[prNote], 0);
 		if (curNote != -1 && breath > thr) {
-			printf("%d %d %d\n", curNote,scale[curNote], pitchBends[curNote]);
+			//printf("%d %d %d\n", curNote,scale[curNote], pitchBends[curNote]);
 			midiOut.sendPitchBend(1, tempPitch);
 			midiOut.sendNoteOn(1, scale[curNote], breath);
 			noteOn = true;
@@ -104,7 +112,7 @@ void ofApp::newMidiMessage(ofxMidiMessage& msg) {
 		else {
 			midiOut.sendControlChange(1, 7, breath);
 			if (!noteOn) {
-				printf("%d %d %d\n", curNote, scale[curNote], pitchBends[curNote]);
+				//printf("%d %d %d\n", curNote, scale[curNote], pitchBends[curNote]);
 				midiOut.sendPitchBend(1, tempPitch);
 				midiOut.sendNoteOn(1, scale[curNote], breath);
 				noteOn = true;
@@ -164,7 +172,9 @@ void ofApp::draw(){
 	text << "delta: " << midiMessage.deltatime;
 	ofDrawBitmapString(text.str(), 20, 240);
 	text.str(""); // clear
-	ofSetColor(255);
+	ofSetColor(255); 
+	ofSetLineWidth(ofGetHeight()*0.01);
+	ofLine(ofPoint(0, ofGetHeight() / 2), ofPoint(ofGetWidth(), ofGetHeight() / 2));
 	ofSetLineWidth(ofGetWidth()*0.01);
 	for (int i = 0; i < notesNumber; i++) {
 		if (i%7 == 3) {
@@ -174,9 +184,13 @@ void ofApp::draw(){
 		}
 		else
 			ofLine(ofPoint(i*noteWidth, 0), ofPoint(i*noteWidth, ofGetHeight()));
+		if (i > 0) {
+			ofSetColor(0);
+			ofDrawBitmapString(ofToString(curMakam[i] - curMakam[i - 1]), ofPoint(i*noteWidth, ofGetHeight()*0.5));
+			ofSetColor(255);
+		}
 	}
-	ofSetLineWidth(ofGetHeight()*0.01);
-	ofLine(ofPoint(0, ofGetHeight() / 2), ofPoint(ofGetWidth(), ofGetHeight() / 2));
+	
 }
 
 
@@ -185,28 +199,23 @@ void ofApp::exit() {
 	midiIn.closePort();
 	midiIn.removeListener(this);
 }
-void ofApp::setMakam(unsigned short int k) {
-	cout << "Loaded " << makams.size() << " makams:" << endl;
-	for (int i = 0; i < makams.size(); i++) {
-		printf("%d: %s %d %d %d %d %d %d %d %d\n", i,makams[i].name, makams[i].starts, makams[i].intervals[0], makams[i].intervals[1], makams[i].intervals[2], makams[i].intervals[3], makams[i].intervals[4], makams[i].intervals[5], makams[i].intervals[6]);
-	}
-	printf("Select Makam (number + enter): ");
-	cin >> k;
-	cout << "loading " << makams[k].name << endl;
+void ofApp::setMakam(unsigned short int k) {	
 	int scaleComas = (int)makams[k].starts;
-	float interval = 48 + (float)(scaleComas) / 53.0*12.0;
+	float interval = cargahTonalityMidi + (float)(scaleComas) / 53.0*12.0;
 	scale[3] = round(interval);
 	pitchBends[3] = 8192 + (interval - scale[3]) * 8192;
+	curMakam[3] = scaleComas;
 	for (int i = 4; i < notesNumber; i++) {
-		interval = 48 + (float)(makams[k].intervals[(i-4) % 7] + scaleComas) / 53.0*12.0;
+		interval = cargahTonalityMidi + (float)(makams[k].intervals[(i-4) % 7] + scaleComas) / 53.0*12.0;
 		scale[i] = round(interval);
 		pitchBends[i] = 8192 + (interval - scale[i]) * 8192; //the pitch bend sould be set to 8192->1 semitone.
 		scaleComas += makams[k].intervals[(i - 4) % 7];
-		
+		curMakam[i] = scaleComas;
 	}
 	for (int i = 0; i < 3; i++) {
 		scale[i] = scale[i+7]-12;
 		pitchBends[i] = pitchBends[i+7]; //the pitch bend sould be set to 8192->1 semitone.
+		curMakam[i] = curMakam[i + 7] - 53;
 	}
 	for (int i = 0; i < notesNumber; i++) {
 		printf("scale[%d] = %d, pitchBend = %d\n", i, scale[i], pitchBends[i]);
@@ -214,7 +223,14 @@ void ofApp::setMakam(unsigned short int k) {
 }
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
-
+	switch (key)
+	{
+	case 'f':
+		ofToggleFullscreen();
+		break;
+	default:
+		break;
+	}
 }
 
 //--------------------------------------------------------------

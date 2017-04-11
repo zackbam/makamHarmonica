@@ -25,12 +25,15 @@ class ofApp : public ofBaseApp, public ofxMidiListener {
 		unsigned int breath;
 		int notesNumber;
 		int scale[200];
+		int curMakam[200];
+		int cargahTonalityMidi;
 		int pitchBends[200];
 		int tempPitch;
 		float noteWidth;
 		int curNote;
 		int prNote;
 		int pitchBend;
+		int selectedMakam;
 		unsigned int thr,sensitivity;
 		bool noteOn;
 		vector<makam> makams;
