@@ -23,6 +23,7 @@ void ofApp::setup(){
 	char paramName[30];
 	
 	cargahTonalityMidi = 48;
+	fixationSpeed = 200;
 	if (initParam == NULL)
 		cout << "No settings.txt file found\n";
 	else {
@@ -38,6 +39,8 @@ void ofApp::setup(){
 				notesNumber = temp;
 			else if (strcmp(paramName, "cargahTonalityMidi") == 0)
 				cargahTonalityMidi = temp;
+			else if (strcmp(paramName, "fixationSpeed") == 0)
+				fixationSpeed = temp;
 
 		}
 	}
@@ -73,28 +76,34 @@ void ofApp::setup(){
 	midiIn.setVerbose(true);
 	pitchBend = 8192;
 	fclose(initParam);
+	tetrachord tempTetra;
+	tempTetra.name = "HicazDortlusu";
+	tempTetra.intervals = { 5,8,5 };
 }
 
 void ofApp::mouseMoved(int x, int y) {
-	prNote = curNote;
-	curNote = x / noteWidth;
-	pitchBend = (float)(ofGetHeight() - y) / (float)ofGetHeight() * 16383 - 8192; //how much pitch bend additional to the pitch bend of the note
-	tempPitch = pitchBend + pitchBends[curNote];
-	if (tempPitch < 0)
-		tempPitch = 0;
-	else if (tempPitch > 16383)
-		tempPitch = 16383;
-	midiOut.sendPitchBend(1, tempPitch);
-	if (curNote != prNote) {
-		if (prNote != -1)
-			midiOut.sendNoteOff(1, scale[prNote], 0);
-		if (curNote != -1 && breath > thr) {
-			//printf("%d %d %d\n", curNote,scale[curNote], pitchBends[curNote]);
-			midiOut.sendPitchBend(1, tempPitch);
-			midiOut.sendNoteOn(1, scale[curNote], breath);
-			noteOn = true;
+	if (ofDist(x, y, prMouse.x, prMouse.y) < fixationSpeed) {
+		prNote = curNote;
+		curNote = x / noteWidth;
+		pitchBend = (float)(ofGetHeight() - y) / (float)ofGetHeight() * 16383 - 8192; //how much pitch bend additional to the pitch bend of the note
+		tempPitch = pitchBend + pitchBends[curNote];
+		if (tempPitch < 0)
+			tempPitch = 0;
+		else if (tempPitch > 16383)
+			tempPitch = 16383;
+		midiOut.sendPitchBend(1, tempPitch);
+		if (curNote != prNote) {
+			if (prNote != -1)
+				midiOut.sendNoteOff(1, scale[prNote], 0);
+			if (curNote != -1 && breath > thr) {
+				//printf("%d %d %d\n", curNote,scale[curNote], pitchBends[curNote]);
+				midiOut.sendPitchBend(1, tempPitch);
+				midiOut.sendNoteOn(1, scale[curNote], breath);
+				noteOn = true;
+			}
 		}
 	}
+	prMouse = ofPoint(x, y);
 }
 
 void ofApp::newMidiMessage(ofxMidiMessage& msg) {
@@ -131,6 +140,9 @@ void ofApp::update(){
 
 }
 
+void insterTetracord(tetrachord temp, int pos) {
+
+}
 //--------------------------------------------------------------
 void ofApp::draw(){
 
