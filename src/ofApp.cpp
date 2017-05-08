@@ -9,6 +9,7 @@ void ofApp::setup(){
 	curNote = -1;
 	prNote = -1;
 	tempPitch = 8192;
+	pitchBendHeight = 100; //percent of the window height
 	FILE *initParam,*loadMakams;
 	loadMakams = fopen("makams.txt", "r");
 	if (loadMakams == NULL)
@@ -41,7 +42,8 @@ void ofApp::setup(){
 				cargahTonalityMidi = temp;
 			else if (strcmp(paramName, "fixationSpeed") == 0)
 				fixationSpeed = temp;
-
+			else if (strcmp(paramName, "pitchBendHeight") == 0)
+				pitchBendHeight = (float)temp/100.0;
 		}
 	}
 	cout << "Loaded " << makams.size() << " makams:" << endl;
@@ -85,22 +87,29 @@ void ofApp::mouseMoved(int x, int y) {
 	if (ofDist(x, y, prMouse.x, prMouse.y) < fixationSpeed) {
 		prNote = curNote;
 		curNote = x / noteWidth;
-		pitchBend = (float)(ofGetHeight() - y) / (float)ofGetHeight() * 16383 - 8192; //how much pitch bend additional to the pitch bend of the note
-		tempPitch = pitchBend + pitchBends[curNote];
-		if (tempPitch < 0)
-			tempPitch = 0;
-		else if (tempPitch > 16383)
-			tempPitch = 16383;
-		midiOut.sendPitchBend(1, tempPitch);
-		if (curNote != prNote) {
-			if (prNote != -1)
-				midiOut.sendNoteOff(1, scale[prNote], 0);
-			if (curNote != -1 && breath > thr) {
-				//printf("%d %d %d\n", curNote,scale[curNote], pitchBends[curNote]);
-				midiOut.sendPitchBend(1, tempPitch);
-				midiOut.sendNoteOn(1, scale[curNote], breath);
-				noteOn = true;
+		if (abs(y - ofGetHeight() / 2)  < ofGetHeight()*0.6*(pitchBendHeight)) {
+			pitchBend = (float)(ofGetHeight() - y) / (float)ofGetHeight() * 16383 - 8192; //how much pitch bend additional to the pitch bend of the note
+			pitchBend = pitchBend / pitchBendHeight;
+			tempPitch = pitchBend + pitchBends[curNote];
+			if (tempPitch < 0)
+				tempPitch = 0;
+			else if (tempPitch > 16383)
+				tempPitch = 16383;
+			midiOut.sendPitchBend(1, tempPitch);
+			if (curNote != prNote || !noteOn) {
+				if (prNote != -1)
+					midiOut.sendNoteOff(1, scale[prNote], 0);
+				if (curNote != -1 && breath > thr) {
+					//printf("%d %d %d\n", curNote,scale[curNote], pitchBends[curNote]);
+					midiOut.sendPitchBend(1, tempPitch);
+					midiOut.sendNoteOn(1, scale[curNote], breath);
+					noteOn = true;
+				}
 			}
+		}
+		else {
+			midiOut.sendNoteOff(1, scale[curNote], 0);
+			noteOn = false;
 		}
 	}
 	prMouse = ofPoint(x, y);
@@ -148,54 +157,54 @@ void ofApp::draw(){
 
 	ofSetColor(0);
 	// draw the last recieved message contents to the screen
-	text << "Received: " << ofxMidiMessage::getStatusString(midiMessage.status);
-	ofDrawBitmapString(text.str(), 20, 20);
-	text.str(""); // clear
+	//text << "Received: " << ofxMidiMessage::getStatusString(midiMessage.status);
+	//ofDrawBitmapString(text.str(), 20, 20);
+	//text.str(""); // clear
 
-	text << "channel: " << midiMessage.channel;
-	ofDrawBitmapString(text.str(), 20, 34);
-	text.str(""); // clear
+	//text << "channel: " << midiMessage.channel;
+	//ofDrawBitmapString(text.str(), 20, 34);
+	//text.str(""); // clear
 
-	text << "pitch: " << midiMessage.pitch;
-	ofDrawBitmapString(text.str(), 20, 48);
-	text.str(""); // clear
-	ofDrawRectangle(20, 58, ofMap(midiMessage.pitch, 0, 127, 0, ofGetWidth() - 40), 20);
+	//text << "pitch: " << midiMessage.pitch;
+	//ofDrawBitmapString(text.str(), 20, 48);
+	//text.str(""); // clear
+	//ofDrawRectangle(20, 58, ofMap(midiMessage.pitch, 0, 127, 0, ofGetWidth() - 40), 20);
 
-	text << "velocity: " << midiMessage.velocity;
-	ofDrawBitmapString(text.str(), 20, 96);
-	text.str(""); // clear
-	ofDrawRectangle(20, 105, ofMap(midiMessage.velocity, 0, 127, 0, ofGetWidth() - 40), 20);
+	//text << "velocity: " << midiMessage.velocity;
+	//ofDrawBitmapString(text.str(), 20, 96);
+	//text.str(""); // clear
+	//ofDrawRectangle(20, 105, ofMap(midiMessage.velocity, 0, 127, 0, ofGetWidth() - 40), 20);
 
-	text << "control: " << midiMessage.control;
-	ofDrawBitmapString(text.str(), 20, 144);
-	text.str(""); // clear
-	ofDrawRectangle(20, 154, ofMap(midiMessage.control, 0, 127, 0, ofGetWidth() - 40), 20);
+	//text << "control: " << midiMessage.control;
+	//ofDrawBitmapString(text.str(), 20, 144);
+	//text.str(""); // clear
+	//ofDrawRectangle(20, 154, ofMap(midiMessage.control, 0, 127, 0, ofGetWidth() - 40), 20);
 
-	text << "value: " << midiMessage.value;
-	ofDrawBitmapString(text.str(), 20, 192);
-	text.str(""); // clear
+	//text << "value: " << midiMessage.value;
+	//ofDrawBitmapString(text.str(), 20, 192);
+	//text.str(""); // clear
 	if (midiMessage.status == MIDI_PITCH_BEND) {
-		ofDrawRectangle(20, 202, ofMap(midiMessage.value, 0, MIDI_MAX_BEND, 0, ofGetWidth() - 40), 20);
+		ofDrawRectangle(20, 20, ofMap(midiMessage.value, 0, MIDI_MAX_BEND, 0, ofGetWidth() - 40), 20);
 	}
 	else {
-		ofDrawRectangle(20, 300, ofMap(breath, 0, 127, 0, ofGetWidth() - 40), 20);
+		ofDrawRectangle(20, 20, ofMap(breath, 0, 127, 0, ofGetWidth() - 40), 20);
 	}
 
-	text << "delta: " << midiMessage.deltatime;
-	ofDrawBitmapString(text.str(), 20, 240);
-	text.str(""); // clear
+	//text << "delta: " << midiMessage.deltatime;
+	//ofDrawBitmapString(text.str(), 20, 240);
+	//text.str(""); // clear
 	ofSetColor(255); 
 	ofSetLineWidth(ofGetHeight()*0.01);
-	ofLine(ofPoint(0, ofGetHeight() / 2), ofPoint(ofGetWidth(), ofGetHeight() / 2));
 	ofSetLineWidth(ofGetWidth()*0.01);
+	ofLine(ofPoint(0, ofGetHeight() / 2), ofPoint(ofGetWidth(), ofGetHeight() / 2));
 	for (int i = 0; i < notesNumber; i++) {
 		if (i%7 == 3) {
 			ofSetColor(255, 0, 0);
-			ofLine(ofPoint(i*noteWidth, 0), ofPoint(i*noteWidth, ofGetHeight()));
+			ofLine(ofPoint(i*noteWidth, ofGetHeight()/2-ofGetHeight()/2*pitchBendHeight), ofPoint(i*noteWidth, ofGetHeight() / 2 + ofGetHeight() / 2 * pitchBendHeight));
 			ofSetColor(255);
 		}
 		else
-			ofLine(ofPoint(i*noteWidth, 0), ofPoint(i*noteWidth, ofGetHeight()));
+			ofLine(ofPoint(i*noteWidth, ofGetHeight() / 2 - ofGetHeight() / 2 * pitchBendHeight), ofPoint(i*noteWidth, ofGetHeight() / 2 + ofGetHeight() / 2 * pitchBendHeight));
 		if (i > 0) {
 			ofSetColor(0);
 			ofDrawBitmapString(ofToString(curMakam[i] - curMakam[i - 1]), ofPoint(i*noteWidth, ofGetHeight()*0.5));

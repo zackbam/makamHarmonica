@@ -30,6 +30,7 @@ class ofApp : public ofBaseApp, public ofxMidiListener {
 		unsigned int breath;
 		unsigned int fixationSpeed;
 		ofPoint prMouse;
+		float pitchBendHeight;
 		int notesNumber;
 		int scale[200];
 		int curMakam[200];

@@ -3,3 +3,4 @@ sensitivity 3
 notesNum 19
 cargahTonalityMidi 55
 fixationSpeed 5
+pitchBendHeight 30
